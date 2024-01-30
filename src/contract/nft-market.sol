@@ -12,6 +12,7 @@ contract Market {
 
     bytes4 internal constant MAGIC_ON_ERC721_RECEIVED = 0x150b7a02;
     listNFTItem[] private   ListedNFTs;
+    uint256 public  Rate;//It means 1 wei can be how mach erc20 tokens
 
     struct Order {
         address seller;
@@ -78,9 +79,9 @@ contract Market {
 
     function buyNFT(uint tokenId) public payable {
         uint256 price = getNFTPrice(tokenId);
+        (uint256 truePrice, )= saveMutiply(price, Rate);
 
-
-        require(msg.value >= price, "Insufficient payment");
+        require(msg.value >= truePrice, "Insufficient payment");
 
         address payable owner = payable(erc721.ownerOf(tokenId));
         require(owner != address(0), "Invalid token");
@@ -102,11 +103,12 @@ contract Market {
     }
 
 
-    constructor(address _erc20, address _erc721){
+    constructor(address _erc20, address _erc721,uint256 rate){
         require(_erc20 != address(0), "zero address");
         require(_erc721 != address(0), "zero address");
         erc20 = IERC20(_erc20);
         erc721 = IERC721(_erc721);
+        Rate=rate;
     }
     function buy(uint256 _tokenId) external {
         address seller = orderOfId[_tokenId].seller;
@@ -119,21 +121,21 @@ contract Market {
 
    
 
-    function changePrice(uint256 _tokenId, uint256
-        _price) external {
-        address seller = orderOfId[_tokenId].seller;
-        require(msg.sender == seller, "not seller");
-        uint256 previousPrice = orderOfId
-        [_tokenId].price;
-        orderOfId[_tokenId].price = _price;
+    // function changePrice(uint256 _tokenId, uint256
+    //     _price) external {
+    //     address seller = orderOfId[_tokenId].seller;
+    //     require(msg.sender == seller, "not seller");
+    //     uint256 previousPrice = orderOfId
+    //     [_tokenId].price;
+    //     orderOfId[_tokenId].price = _price;
 
-        Order storage order = orders [idToOrderIndex[_tokenId]];
-        order.price = _price;
+    //     Order storage order = orders [idToOrderIndex[_tokenId]];
+    //     order.price = _price;
 
-        emit PriceChanged(seller, _tokenId,
-            previousPrice, _price);
+    //     emit PriceChanged(seller, _tokenId,
+    //         previousPrice, _price);
 
-    }
+    // }
 
     function onERC721Received(
         address operator,
@@ -148,6 +150,18 @@ contract Market {
         idToOrderIndex[tokenId] = orders.length - 1;
         emit NewOrder(from, tokenId, price);
         return MAGIC_ON_ERC721_RECEIVED;
+    }
+
+    function createNFT(string memory uri)external{
+        
+    }
+    function saveMutiply(uint256 A,uint256 B) internal pure  returns (uint256 result,bool _isOverflow){
+        uint tempResult = A*B;
+        if((tempResult/B)==A){
+            return (tempResult,false);
+        }else {
+            return (type(uint256).max,true);
+        } 
     }
 
     

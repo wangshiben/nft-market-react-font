@@ -2,6 +2,7 @@ import './App.css';
 import React,{useEffect,useState} from "react";
 // import { ethers } from 'ethers';
 import {getErc20Balance, safeMint, transfer, transferFrom} from "./utils/erc20Util"
+import {buyWithETH} from "./utils/nftMarketUtil";
 
 function App() {
     const [walletAddress, setWallet] = useState("");
@@ -56,6 +57,9 @@ function App() {
     const transFerFromValue = async () => {
         await transferFrom(walletAddress,"0x5E0ff5E6EE4B77A5b2f7633257EF0F2161917d1f","10000000")
     }
+    const buyNFT = async () => {
+      await buyWithETH(0)
+    }
 
 
 
@@ -72,7 +76,8 @@ function App() {
         <br/>
         <button onClick={transFerValue}>交易</button>
         <button onClick={transFerFromValue}>代交易</button>
-        <p>Account Address: {walletAddress}</p>
+        <p>Account Address: {walletAddress}</p><br/>
+        <button onClick={buyNFT}>购买NFT</button>
     </div>
   );
 }
