@@ -4,15 +4,17 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/interfaces/IERC721Receiver.sol";
 import "./erc721-nft.sol";
+import "./erc20-usdt.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 contract Market {
-    IERC20 public erc20;
-    IERC721 public erc721;
+    CUSDT public erc20;
+    MyNFT public erc721;
 
     bytes4 internal constant MAGIC_ON_ERC721_RECEIVED = 0x150b7a02;
     listNFTItem[] private   ListedNFTs;
     uint256 public  Rate;//It means 1 wei can be how mach erc20 tokens
+    uint256 public CreatePrice=1;
 
     struct Order {
         address seller;
@@ -28,6 +30,14 @@ contract Market {
     event NewOrder(address seller, uint256 tokenId, uint256 price);
     event PriceChanged(address seller, uint256 tokenId, uint256 previousPrice, uint256 price);
     event OrderCancelled(address seller, uint256 tokenId);
+
+ constructor(address _erc20, address _erc721,uint256 rate){
+        require(_erc20 != address(0), "zero address");
+        require(_erc721 != address(0), "zero address");
+        erc20 = CUSDT(_erc20);
+        erc721 = MyNFT(_erc721);
+        Rate=rate;
+    }
 
     struct listNFTItem {
         uint256 tokenId;
@@ -103,13 +113,7 @@ contract Market {
     }
 
 
-    constructor(address _erc20, address _erc721,uint256 rate){
-        require(_erc20 != address(0), "zero address");
-        require(_erc721 != address(0), "zero address");
-        erc20 = IERC20(_erc20);
-        erc721 = IERC721(_erc721);
-        Rate=rate;
-    }
+   
     function buy(uint256 _tokenId) external {
         address seller = orderOfId[_tokenId].seller;
         address buyer = msg.sender;
@@ -144,16 +148,21 @@ contract Market {
         bytes calldata data
     ) external returns (bytes4){
         uint256 price = toUint256(data, 0);
+        require(operator!=address(0),"Invalid Operator");
         require(price > 0, "price must be greater than 0");
         orders.push(Order(from, tokenId, price));
         orderOfId[tokenId] = Order(from, tokenId, price);
         idToOrderIndex[tokenId] = orders.length - 1;
         emit NewOrder(from, tokenId, price);
+        
         return MAGIC_ON_ERC721_RECEIVED;
     }
 
-    function createNFT(string memory uri)external{
-        
+    function createNFT(string memory uri,string memory CID)external{
+        (uint256 price ,bool over) =  saveMutiply(Rate,CreatePrice);
+        require(!over,"value overFlow");
+        erc721.safeMint(msg.sender, uri, CID);
+        erc20.Ruin(msg.sender, price);
     }
     function saveMutiply(uint256 A,uint256 B) internal pure  returns (uint256 result,bool _isOverflow){
         uint tempResult = A*B;

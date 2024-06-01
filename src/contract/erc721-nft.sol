@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract MyNFT is ERC721, ERC721Enumerable, Ownable {
     uint256 private _nextTokenId;
     string  private  basedURI;
+    mapping(string=>string) public NamServiceToCID; 
    
 
     constructor(address initialOwner)
@@ -17,17 +18,27 @@ contract MyNFT is ERC721, ERC721Enumerable, Ownable {
     {}
 
     
+    function updateOwner(address newAdd)public onlyOwner {
 
-    
+        _transferOwnership(newAdd);
+    }
+
+    function tokenURI(uint256 tokenId) public view override  returns (string memory) {
+        _requireOwned(tokenId);
+
+        string memory baseURI = _baseURI();
+        return baseURI;
+    }
 
     function _baseURI() internal view override returns (string memory) {
         return basedURI;
     }
 
-    function safeMint(address to,string memory baseURI) public onlyOwner {
+    function safeMint(address to,string memory baseURI,string memory CID) public onlyOwner {
         basedURI=baseURI;
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
+        NamServiceToCID[baseURI]=CID;
     }
 
     // The following functions are overrides required by Solidity.
