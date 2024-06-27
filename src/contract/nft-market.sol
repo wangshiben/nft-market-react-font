@@ -6,8 +6,9 @@ import "@openzeppelin/contracts/interfaces/IERC721Receiver.sol";
 import "./erc721-nft.sol";
 import "./erc20-usdt.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Market {
+contract Market is Ownable{
     CUSDT public erc20;
     MyNFT public erc721;
 
@@ -15,6 +16,7 @@ contract Market {
     listNFTItem[] private   ListedNFTs;
     uint256 public  Rate;//It means 1 wei can be how mach erc20 tokens
     uint256 public CreatePrice=1;
+    uint256 private SavedNum=0;
 
     struct Order {
         address seller;
@@ -31,7 +33,9 @@ contract Market {
     event PriceChanged(address seller, uint256 tokenId, uint256 previousPrice, uint256 price);
     event OrderCancelled(address seller, uint256 tokenId);
 
- constructor(address _erc20, address _erc721,uint256 rate){
+ constructor(address _erc20, address _erc721,uint256 rate,address initialOwner)
+ Ownable(initialOwner)
+ {
         require(_erc20 != address(0), "zero address");
         require(_erc721 != address(0), "zero address");
         erc20 = CUSDT(_erc20);
@@ -122,6 +126,18 @@ contract Market {
         erc721.safeTransferFrom(address(this), buyer, _tokenId);
         emit Deal(seller, buyer, _tokenId, price);
     }
+    function TransMitETH()public onlyOwner{
+         address payable ownerAddress = payable(owner());
+          ownerAddress.transfer(SavedNum);
+          
+    }
+
+    function buyErc20() payable external {
+        address buyer= msg.sender;
+        (uint256 data,bool oerflow) = saveMutiply( msg.value,Rate);
+        require(!oerflow,"value overFlow");
+        erc20.safeMint(buyer, data);
+    }
 
    
 
@@ -159,6 +175,7 @@ contract Market {
     }
 
     function createNFT(string memory uri,string memory CID)external{
+        //创建CID与NFT对应
         (uint256 price ,bool over) =  saveMutiply(Rate,CreatePrice);
         require(!over,"value overFlow");
         erc721.safeMint(msg.sender, uri, CID);
