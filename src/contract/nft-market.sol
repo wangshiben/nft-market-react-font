@@ -8,10 +8,16 @@ import "./erc20-usdt.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+
+
 contract Market is Ownable{
     CUSDT public erc20;
     MyNFT public erc721;
-
+    struct NameService {
+        string NameService;
+        string CID;
+        uint256 TokenId;
+    }
     bytes4 internal constant MAGIC_ON_ERC721_RECEIVED = 0x150b7a02;
     listNFTItem[] private   ListedNFTs;
     uint256 public  Rate;//It means 1 wei can be how mach erc20 tokens
@@ -116,7 +122,12 @@ contract Market is Ownable{
         }
     }
 
-
+    function updateOwner(string memory URI,string memory ZID)public {
+        uint256 tokenID=  erc721.NameServiceToTokenId(URI);
+        address add = erc721.ownerOf(tokenID);
+        require(add==msg.sender,"only owner can do it");
+        erc721.ChangeCID(URI, ZID);
+    }
    
     function buy(uint256 _tokenId) external {
         address seller = orderOfId[_tokenId].seller;
@@ -138,6 +149,19 @@ contract Market is Ownable{
         require(!oerflow,"value overFlow");
         erc20.safeMint(buyer, data);
     }
+    function balanceOfToken()public view returns(NameService[]memory){
+        address sender =  msg.sender;
+        uint256[] memory list = erc721.balanceOfList(sender);
+        NameService[] memory NameServices = new NameService[](list.length);
+        
+         for (uint256 i = 0; i < list.length; i++) {
+           string memory service =erc721.TokenToNameService(list[i]);
+           NameService memory item =  NameService(service,erc721.NameServiceToCID(service),list[i]);
+           NameServices[i]=item; 
+        }
+        return NameServices;
+    }
+
 
    
 

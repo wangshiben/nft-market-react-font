@@ -9,17 +9,21 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract MyNFT is ERC721, ERC721Enumerable, Ownable {
     uint256 private _nextTokenId;
     string  private  basedURI;
-    mapping(string=>string) public NamServiceToCID; 
-   
-
+    mapping(string=>string) public NameServiceToCID; 
+    mapping (string=>uint256) public NameServiceToTokenId;
+    mapping (uint256=>string) public TokenToNameService;
+    mapping(address=>uint256[]) public addToToken;
     constructor(address initialOwner)
         ERC721("NFTM", "NFTM")
         Ownable(initialOwner)
     {}
 
     
-    function updateOwner(address newAdd)public onlyOwner {
+    function balanceOfList (address _owner) external view returns (uint256[] memory) {
+        return addToToken[_owner];
+    }
 
+    function updateOwner(address newAdd)public onlyOwner {
         _transferOwnership(newAdd);
     }
 
@@ -38,7 +42,20 @@ contract MyNFT is ERC721, ERC721Enumerable, Ownable {
         basedURI=baseURI;
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
-        NamServiceToCID[baseURI]=CID;
+        NameServiceToCID[baseURI]=CID;
+        NameServiceToTokenId[baseURI]=tokenId;
+        TokenToNameService[tokenId]=baseURI;
+        if (addToToken[to].length == 0) {
+            addToToken[to] = new uint256[](0);
+        }
+        addToToken[to].push(tokenId);
+    }
+    function ChangeCID(string memory baseURI,string memory CID)public onlyOwner {
+        NameServiceToCID[baseURI]=CID;
+    }
+
+    function getCID(string memory baseURI) public view returns(string memory){
+        return NameServiceToCID[baseURI];
     }
 
     // The following functions are overrides required by Solidity.
